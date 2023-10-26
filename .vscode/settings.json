@@ -77,5 +77,6 @@
 		"valarray": "cpp",
 		"variant": "cpp",
 		"complex": "cpp"
-	}
+	},
+	"C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

@@ -98,6 +98,12 @@ ssize_t Controller::handleWriteRequestPacket(char *src, char *dst,
     this->state.setMode(packet.mode);
     this->state.incrementBlockNumber();
 
+    // Overwrite file if it exists
+    if (this->filesystem.fileExists(packet.filename)) {
+        this->filesystem.deleteFile(packet.filename);
+        this->filesystem.createFile(packet.filename);
+    }
+
     // Send ack packet
     AckPacket ack_packet(0);
     return ack_packet.serialize(dst);
@@ -121,19 +127,42 @@ ssize_t Controller::handleDataPacket(char *src, char *dst, ssize_t src_size) {
 
     // Print packet information
     std::cout << "-> DataPacket: " << packet.block_number << std::endl;
+    
+    // Get buffer offset
+    ssize_t offset = ((packet.block_number - 1) * 512) % sizeof(this->state.file_buffer);
 
-    // Write data to file
-    ssize_t bytes_written = this->filesystem.writeFile(
-        this->state.filename, packet.data, packet.data_size,
-        (packet.block_number - 1) * 512);
+    // Check if buffer is full
+    if (!offset && packet.block_number > 1) {
+        // Write file buffer to file
+        ssize_t bytes_written = this->filesystem.appendFile(
+            this->state.filename, this->state.file_buffer, sizeof(this->state.file_buffer));
 
-    if (bytes_written < 0) {
-        return this->writeError(dst, ErrorCode::NOT_DEFINED,
-                                "Failed to write file!");
+        if (bytes_written < 0) {
+            return this->writeError(dst, ErrorCode::NOT_DEFINED,
+                                    "Failed to write file!");
+        }
+
+        // Clear buffer
+        this->state.clearBuffer();
     }
+
+    // Write data to filebuffer.
+    this->state.bufferData(packet.data, packet.data_size, offset);
 
     // Reset state if we read less than 512 bytes
     if (packet.data_size < 512) {
+        ssize_t write_size = packet.data_size + offset;
+
+        // Write file buffer to file
+        ssize_t bytes_written = this->filesystem.appendFile(
+            this->state.filename, this->state.file_buffer, write_size);
+        
+
+        if (bytes_written < 0) {
+            return this->writeError(dst, ErrorCode::NOT_DEFINED,
+                                "Failed to write file!");
+        }
+
         this->state.reset();
     }
 

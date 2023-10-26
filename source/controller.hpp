@@ -23,18 +23,27 @@ class ControllerState {
     uint16_t block_number;
     ReadWriteRequestMode mode;
 
+    char file_buffer[1024 * 1024 * 5]; // 5MB
+
     ControllerState() : state(State::IDLE), block_number(0) {}
 
     void reset() {
         this->state = State::IDLE;
         this->block_number = 0;
+
+        clearBuffer();
     }
 
     void setFilename(const char *filename) { strcpy(this->filename, filename); }
-
     void setMode(ReadWriteRequestMode mode) { this->mode = mode; }
     void incrementBlockNumber() { ++this->block_number; }
     void setState(State state) { this->state = state; }
+
+    // File buffer
+    void clearBuffer() { memset(this->file_buffer, 0, sizeof(this->file_buffer)); }
+    void bufferData(const char *data, ssize_t size, ssize_t offset) {
+        memcpy(this->file_buffer + offset, data, size);
+    }
 };
 
 class Controller : public AbstractController {

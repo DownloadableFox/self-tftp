@@ -10,6 +10,7 @@ bool FileSystem::fileExists(const char *filename) const {
 
 bool FileSystem::createFile(const char *filename) const {
     std::ofstream file(filename);
+    file.close();
     return file.good();
 }
 
@@ -25,6 +26,7 @@ ssize_t FileSystem::readFile(const char *filename, char *buffer, ssize_t size,
     }
     file.seekg(offset);
     file.read(buffer, size);
+    file.close();
     return file.gcount();
 }
 
@@ -36,6 +38,18 @@ bool FileSystem::writeFile(const char *filename, const char *buffer,
     }
     file.seekp(offset);
     file.write(buffer, size);
+    file.close();
+    return file.good();
+}
+
+bool FileSystem::appendFile(const char *filename, const char *buffer,
+                             ssize_t size) const {
+    std::ofstream file(filename, std::ios::binary | std::ios::app);
+    if (!file) {
+        return false;
+    }
+    file.write(buffer, size);
+    file.close();
     return file.good();
 }
 }  // namespace tftp
