@@ -23,6 +23,9 @@ Server::Server(std::string ip, unsigned int port,
 Server::~Server() { close(this->socket_fd); }
 
 void Server::listen() {
+    std::cout << "Listening on " << inet_ntoa(this->server_addr.sin_addr) << ":"
+              << ntohs(this->server_addr.sin_port) << std::endl;
+
     if (bind(this->socket_fd, (struct sockaddr *)&this->server_addr,
              sizeof(this->server_addr)) < 0) {
         throw std::runtime_error("Failed to bind socket");
