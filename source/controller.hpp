@@ -2,7 +2,7 @@
 
 #include <sys/types.h>
 
-#include "filesystem.hpp"
+#include "files.hpp"
 #include "packets.hpp"
 
 namespace tftp {
@@ -19,30 +19,33 @@ class ControllerState {
         WRITING,
     } state;
 
-    char filename[512];
     uint16_t block_number;
-    ReadWriteRequestMode mode;
+    FileWorker *file_worker;
 
-    char file_buffer[1024 * 1024 * 5]; // 5MB
-
-    ControllerState() : state(State::IDLE), block_number(0) {}
+    ControllerState() { this->reset(); }
 
     void reset() {
         this->state = State::IDLE;
         this->block_number = 0;
 
-        clearBuffer();
+        // Delete file worker
+        if (this->file_worker != nullptr) delete this->file_worker;
+        this->file_worker = nullptr;
     }
 
-    void setFilename(const char *filename) { strcpy(this->filename, filename); }
-    void setMode(ReadWriteRequestMode mode) { this->mode = mode; }
+    // Getters and setters
     void incrementBlockNumber() { ++this->block_number; }
-    void setState(State state) { this->state = state; }
+    uint16_t getBlockNumber() const { return this->block_number; }
 
-    // File buffer
-    void clearBuffer() { memset(this->file_buffer, 0, sizeof(this->file_buffer)); }
-    void bufferData(const char *data, ssize_t size, ssize_t offset) {
-        memcpy(this->file_buffer + offset, data, size);
+    void setState(State state) { this->state = state; }
+    State getState() const { return this->state; }
+
+    void setFileWorker(FileWorker *file_worker) {
+        if (this->file_worker != nullptr) {
+            delete this->file_worker;
+        }
+
+        this->file_worker = file_worker;
     }
 };
 
@@ -50,12 +53,13 @@ class Controller : public AbstractController {
    public:
     virtual ssize_t handlePacket(char *src, char *dst, ssize_t size);
 
-    Controller(FileSystem &filesystem) : filesystem(filesystem) {}
+    Controller(FileWorkerFactory &worker_factory)
+        : worker_factory(worker_factory) {}
 
    private:
     // State
     ControllerState state;
-    FileSystem &filesystem;
+    FileWorkerFactory &worker_factory;
 
     // Packet handlers
     ssize_t handleReadRequestPacket(char *src, char *dst, ssize_t size);
@@ -65,8 +69,12 @@ class Controller : public AbstractController {
 
     // Utility functions
     PacketType getPacketType(const char *src) const;
-    ssize_t writeError(char *dst, ErrorCode error_code,
-                       const char *message) const;
+    bool openFileWorker(const char *filename, ReadWriteRequestMode mode);
+    bool openFileWorker(const char *filename, FileWorkerMode mode);
+
+    // Reply functions
     ssize_t sendNextBlock(char *dst);
+    ssize_t sendError(char *dst, ErrorCode error_code,
+                      const char *message) const;
 };
 }  // namespace tftp

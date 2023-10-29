@@ -113,13 +113,13 @@ enum class ErrorCode : uint16_t {
 
 class ErrorPacket : public Packet {
    public:
-    ErrorCode error_code;
-    char error_message[512];
+    ErrorCode code;
+    char message[512];
 
     ErrorPacket() : Packet(PacketType::ERROR) {}
     ErrorPacket(ErrorCode error_code, const char *error_message)
-        : Packet(PacketType::ERROR), error_code(error_code) {
-        strcpy(this->error_message, error_message);
+        : Packet(PacketType::ERROR), code(error_code) {
+        strcpy(this->message, error_message);
     }
     ~ErrorPacket() = default;
 

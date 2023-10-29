@@ -7,17 +7,20 @@
 namespace tftp {
 class FileSystem {
    public:
-   FileSystem() = default;
-   ~FileSystem() = default;
+    FileSystem() = default;
+    ~FileSystem() = default;
 
-   bool fileExists(const char *filename) const;
-   bool createFile(const char *filename) const;
-   bool deleteFile(const char *filename) const;
-   ssize_t readFile(const char *filename, char *buffer, ssize_t size,
-                  ssize_t offset) const;
-   bool writeFile(const char *filename, const char *buffer, ssize_t size,
-                  ssize_t offset) const;
-   bool appendFile(const char *filename, const char *buffer,
-                  ssize_t size) const;
+    bool exists(const std::string filename) const;
+    bool create(const std::string filename) const;
+    bool remove(const std::string filename) const;
+
+    ssize_t read(const std::string filename, char *buffer, ssize_t size,
+                 ssize_t offset = 0) const;
+
+    ssize_t write(const std::string filename, char *buffer, ssize_t size,
+                  ssize_t offset = 0) const;
+
+    ssize_t append(const std::string filename, char *buffer,
+                   ssize_t size) const;
 };
 }  // namespace tftp

@@ -12,7 +12,8 @@ int main(int argc, char **argv) {
     unsigned int port = 69;
 
     // Check if the user wants to see the help message
-    if (argc > 2 || (argc == 2 && (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help"))) {
+    if (argc > 2 || (argc == 2 && (std::string(argv[1]) == "-h" ||
+                                   std::string(argv[1]) == "--help"))) {
         usage(argv[0]);
     }
 
@@ -27,8 +28,12 @@ int main(int argc, char **argv) {
     // Create a filesystem
     tftp::FileSystem filesystem;
 
+    // Create a file worker factory
+    constexpr unsigned int buffer_size = 5 * 1024 * 1024;  // 5 MB
+    tftp::BufferedFileWorkerFactory worker_factory(buffer_size, filesystem);
+
     // Create a controller for incomming connections
-    tftp::Controller controller(filesystem);
+    tftp::Controller controller(worker_factory);
 
     // Create a server that listens on all interfaces on port 8080
     tftp::Server server("0.0.0.0", port, controller);

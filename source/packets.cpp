@@ -33,6 +33,9 @@ ssize_t ReadWriteRequestPacket::serialize(char *dst) const {
     }
     size += strlen(dst + size) + 1;
 
+    printf("<- Read/Write request packet: { filename: %s, mode: %s }\n",
+           filename, dst + size);
+
     return size;
 }
 
@@ -68,6 +71,9 @@ void ReadWriteRequestPacket::deserialize(const char *src) {
     } else {
         throw std::runtime_error("Invalid file read/write mode!");
     }
+
+    printf("-> Read/Write request packet: { filename: %s, mode: %s }\n",
+           filename, mode_str);
 }
 
 ssize_t DataPacket::serialize(char *dst) const {
@@ -86,6 +92,8 @@ ssize_t DataPacket::serialize(char *dst) const {
     memcpy(dst + size, data, data_size);
     size += data_size;
 
+    printf("<- Data packet: { block_number: %d, data_size: %ld }\n",
+           block_number, data_size);
     return size;
 }
 
@@ -105,6 +113,9 @@ void DataPacket::deserialize(const char *src) {
     // Read data
     memcpy(data, src + size, data_size);
     size += data_size;
+
+    printf("-> Data packet: { block_number: %d, data_size: %ld }\n",
+           block_number, data_size);
 }
 
 ssize_t AckPacket::serialize(char *dst) const {
@@ -119,6 +130,7 @@ ssize_t AckPacket::serialize(char *dst) const {
     *reinterpret_cast<uint16_t *>(dst + size) = htons(block_number);
     size += sizeof(block_number);
 
+    printf("<- Ack packet: { block_number: %d }\n", block_number);
     return size;
 }
 
@@ -134,6 +146,8 @@ void AckPacket::deserialize(const char *src) {
     // Read block number
     block_number = ntohs(*reinterpret_cast<const uint16_t *>(src + size));
     size += sizeof(block_number);
+
+    printf("-> Ack packet: { block_number: %d }\n", block_number);
 }
 
 ssize_t ErrorPacket::serialize(char *dst) const {
@@ -146,13 +160,14 @@ ssize_t ErrorPacket::serialize(char *dst) const {
 
     // Write error code
     *reinterpret_cast<uint16_t *>(dst + size) =
-        htons(static_cast<uint16_t>(error_code));
-    size += sizeof(error_code);
+        htons(static_cast<uint16_t>(code));
+    size += sizeof(code);
 
     // Write error message
-    strcpy(dst + size, error_message);
-    size += strlen(error_message) + 1;
+    strcpy(dst + size, message);
+    size += strlen(message) + 1;
 
+    printf("<- Error packet: { code: %d, message: %s }\n", code, message);
     return size;
 }
 
@@ -166,12 +181,14 @@ void ErrorPacket::deserialize(const char *src) {
     size += sizeof(type);
 
     // Read error code
-    error_code = static_cast<ErrorCode>(
+    code = static_cast<ErrorCode>(
         ntohs(*reinterpret_cast<const uint16_t *>(src + size)));
-    size += sizeof(error_code);
+    size += sizeof(code);
 
     // Read error message
-    strcpy(error_message, src + size);
-    size += strlen(error_message) + 1;
+    strcpy(message, src + size);
+    size += strlen(message) + 1;
+
+    printf("-> Error packet: { code: %d, message: %s }\n", code, message);
 }
 }  // namespace tftp
