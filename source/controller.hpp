@@ -19,8 +19,8 @@ class ControllerState {
         WRITING,
     } state;
 
-    uint16_t block_number;
-    FileWorker *file_worker;
+    uint16_t block_number = 0;
+    FileWorker *file_worker = nullptr;
 
     ControllerState() { this->reset(); }
 
