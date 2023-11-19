@@ -76,7 +76,9 @@
 		"typeinfo": "cpp",
 		"valarray": "cpp",
 		"variant": "cpp",
-		"complex": "cpp"
+		"complex": "cpp",
+		"xstring": "cpp",
+		"xutility": "cpp"
 	},
 	"C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

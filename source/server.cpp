@@ -1,14 +1,21 @@
 #include "server.hpp"
 
-#include <arpa/inet.h>
-
 #include <iostream>
 #include <stdexcept>
+
+#include "common.hpp"
 
 namespace tftp {
 Server::Server(std::string ip, unsigned int port,
                AbstractController &controller)
     : controller(controller) {
+#ifdef _WIN32
+    WSADATA wsa_data;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
+        throw std::runtime_error("Failed to initialize socket library");
+    }
+#endif
+
     this->socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (!this->socket_fd) {
@@ -20,7 +27,14 @@ Server::Server(std::string ip, unsigned int port,
     this->server_addr.sin_port = htons(port);
 }
 
-Server::~Server() { close(this->socket_fd); }
+Server::~Server() {
+#ifdef _WIN32
+    closesocket(this->socket_fd);
+    WSACleanup();
+#else
+    close(this->socket_fd);
+#endif
+}
 
 void Server::listen() {
     std::cout << "Listening on " << inet_ntoa(this->server_addr.sin_addr) << ":"
@@ -36,8 +50,13 @@ void Server::listen() {
         memset(this->request, 0, BUFFER_SIZE);
         memset(this->response, 0, BUFFER_SIZE);
 
-        // Attempt to receive data
+// Attempt to receive data
+#ifdef _WIN32
+        int client_len = sizeof(this->client_addr);
+
+#else
         socklen_t client_len = sizeof(this->client_addr);
+#endif
         ssize_t request_size =
             recvfrom(this->socket_fd, this->request, BUFFER_SIZE, 0,
                      (struct sockaddr *)&this->client_addr, &client_len);

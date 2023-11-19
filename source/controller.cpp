@@ -1,6 +1,5 @@
 #include "controller.hpp"
 
-#include <arpa/inet.h>
 #include <memory.h>
 
 #include <iostream>

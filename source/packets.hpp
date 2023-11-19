@@ -4,6 +4,7 @@
 #include <sys/types.h>
 
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 
 namespace tftp {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <sys/types.h>
-
 #include <string>
+
+#include "common.hpp"
 
 namespace tftp {
 class FileSystem {

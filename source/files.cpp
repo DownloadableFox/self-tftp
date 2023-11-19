@@ -1,7 +1,5 @@
 #include "files.hpp"
 
-#include <arpa/inet.h>
-
 #include <algorithm>
 
 namespace tftp {

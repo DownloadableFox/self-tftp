@@ -1,8 +1,8 @@
 #include "packets.hpp"
 
-#include <arpa/inet.h>
-
 #include <stdexcept>
+
+#include "common.hpp"
 
 namespace tftp {
 ssize_t ReadWriteRequestPacket::serialize(char *dst) const {
@@ -167,7 +167,7 @@ ssize_t ErrorPacket::serialize(char *dst) const {
     strcpy(dst + size, message);
     size += strlen(message) + 1;
 
-    printf("<- Error packet: { code: %d, message: %s }\n", code, message);
+    printf("<- Error packet: { code: %d, message: %s }\n", (int)code, message);
     return size;
 }
 
@@ -189,6 +189,6 @@ void ErrorPacket::deserialize(const char *src) {
     strcpy(message, src + size);
     size += strlen(message) + 1;
 
-    printf("-> Error packet: { code: %d, message: %s }\n", code, message);
+    printf("-> Error packet: { code: %d, message: %s }\n", (int)code, message);
 }
 }  // namespace tftp

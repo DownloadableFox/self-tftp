@@ -1,10 +1,9 @@
 #pragma once
 
-#include <sys/types.h>
-
 #include <string>
 #include <vector>
 
+#include "common.hpp"
 #include "filesystem.hpp"
 
 namespace tftp {
@@ -24,7 +23,7 @@ class FileWorker {
     virtual bool close() = 0;
     virtual bool exists() = 0;
     virtual bool remove() = 0;
-    
+
     virtual ssize_t read(char *dst, ssize_t size, ssize_t offset = 0) = 0;
     virtual ssize_t write(char *src, ssize_t size, ssize_t offset = 0) = 0;
     virtual ssize_t append(char *src, ssize_t size) = 0;
