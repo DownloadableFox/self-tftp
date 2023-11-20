@@ -78,7 +78,22 @@
 		"variant": "cpp",
 		"complex": "cpp",
 		"xstring": "cpp",
-		"xutility": "cpp"
+		"xutility": "cpp",
+		"filesystem": "cpp",
+		"ios": "cpp",
+		"locale": "cpp",
+		"xfacet": "cpp",
+		"xiosbase": "cpp",
+		"xlocale": "cpp",
+		"xlocbuf": "cpp",
+		"xlocinfo": "cpp",
+		"xlocmes": "cpp",
+		"xlocmon": "cpp",
+		"xlocnum": "cpp",
+		"xloctime": "cpp",
+		"xmemory": "cpp",
+		"xtr1common": "cpp",
+		"xtree": "cpp"
 	},
 	"C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

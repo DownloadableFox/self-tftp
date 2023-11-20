@@ -4,13 +4,18 @@
 #include "files.hpp"
 #include "packets.hpp"
 
+constexpr uint16_t DEFAULT_WINDOW_SIZE = 512;
+constexpr uint16_t MAX_WINDOW_SIZE = 65460;
+constexpr uint16_t MIN_WINDOW_SIZE = 8;
+constexpr int DEFAULT_TIMEOUT_MS = 5000;
+
 namespace tftp {
-class AbstractController {
+class PacketHandler {
    public:
-    virtual ssize_t handlePacket(char *src, char *dst, ssize_t size) = 0;
+    virtual ssize_t handlePacket(char *src, char *dst, ssize_t src_size) = 0;
 };
 
-class ControllerState {
+class ControllerContext {
    public:
     enum State {
         IDLE,
@@ -18,14 +23,29 @@ class ControllerState {
         WRITING,
     } state;
 
+    // TFTP Operation state
     uint16_t block_number = 0;
+    time_t last_packet_time = 0;
+    bool is_last_block = false;
+
+    // TFTP Options
+    uint16_t window_size = DEFAULT_WINDOW_SIZE;
+    int timeout_ms = DEFAULT_TIMEOUT_MS;
+
     FileWorker *file_worker = nullptr;
 
-    ControllerState() { this->reset(); }
+    ControllerContext() { this->reset(); }
 
     void reset() {
+        // Reset state
         this->state = State::IDLE;
         this->block_number = 0;
+        this->last_packet_time = 0;
+        this->is_last_block = false;
+
+        // Reset options
+        this->window_size = DEFAULT_WINDOW_SIZE;
+        this->timeout_ms = DEFAULT_TIMEOUT_MS;
 
         // Delete file worker
         if (this->file_worker != nullptr) delete this->file_worker;
@@ -39,6 +59,27 @@ class ControllerState {
     void setState(State state) { this->state = state; }
     State getState() const { return this->state; }
 
+    void setLastPacketTime(time_t last_packet_time) {
+        this->last_packet_time = last_packet_time;
+    }
+
+    time_t getLastPacketTime() const { return this->last_packet_time; }
+
+    void setLastBlock(bool is_last_block) {
+        this->is_last_block = is_last_block;
+    }
+
+    bool isLastBlock() const { return this->is_last_block; }
+
+    void setWindowSize(uint16_t window_size) {
+        this->window_size = window_size;
+    }
+
+    uint16_t getWindowSize() const { return this->window_size; }
+
+    void setTimeoutMs(int timeout_ms) { this->timeout_ms = timeout_ms; }
+    int getTimeoutMs() const { return this->timeout_ms; }
+
     void setFileWorker(FileWorker *file_worker) {
         if (this->file_worker != nullptr) {
             delete this->file_worker;
@@ -48,16 +89,16 @@ class ControllerState {
     }
 };
 
-class Controller : public AbstractController {
+class Controller : public PacketHandler {
    public:
-    virtual ssize_t handlePacket(char *src, char *dst, ssize_t size);
+    virtual ssize_t handlePacket(char *src, char *dst, ssize_t src_size);
 
     Controller(FileWorkerFactory &worker_factory)
         : worker_factory(worker_factory) {}
 
    private:
     // State
-    ControllerState state;
+    ControllerContext state;
     FileWorkerFactory &worker_factory;
 
     // Packet handlers

@@ -33,13 +33,24 @@ ssize_t ReadWriteRequestPacket::serialize(char *dst) const {
     }
     size += strlen(dst + size) + 1;
 
+    // Write options
+    for (auto &option : options) {
+        // Write option name
+        strcpy(dst + size, option.first.c_str());
+        size += strlen(option.first.c_str()) + 1;
+
+        // Write option value
+        strcpy(dst + size, option.second.c_str());
+        size += strlen(option.second.c_str()) + 1;
+    }
+
     printf("<- Read/Write request packet: { filename: %s, mode: %s }\n",
            filename, dst + size);
 
     return size;
 }
 
-void ReadWriteRequestPacket::deserialize(const char *src) {
+ssize_t ReadWriteRequestPacket::deserialize(const char *src) {
     // Read packet with size
     ssize_t size = 0;
 
@@ -74,6 +85,35 @@ void ReadWriteRequestPacket::deserialize(const char *src) {
 
     printf("-> Read/Write request packet: { filename: %s, mode: %s }\n",
            filename, mode_str);
+
+    return size;
+}
+
+void ReadWriteRequestPacket::deserializeOptions(const char *src,
+                                                ssize_t src_size) {
+    // Read options
+    ssize_t size = 0;
+
+    while (size < src_size) {
+        // Read option name
+        std::string option_name(src + size);
+        size += strlen(src + size) + 1;
+
+        // Read option value
+        std::string option_value(src + size);
+        size += strlen(src + size) + 1;
+
+        // Add option
+        options[option_name] = option_value;
+    }
+
+    // Print the parsed options
+    printf("-> Read/Write request packet (options): { options: %ld }\n",
+           options.size());
+
+    for (auto &option : options) {
+        std::cout << "\t" << option.first << ": " << option.second << std::endl;
+    }
 }
 
 ssize_t DataPacket::serialize(char *dst) const {
@@ -97,7 +137,7 @@ ssize_t DataPacket::serialize(char *dst) const {
     return size;
 }
 
-void DataPacket::deserialize(const char *src) {
+ssize_t DataPacket::deserialize(const char *src) {
     // Read packet with size
     ssize_t size = 0;
 
@@ -116,6 +156,8 @@ void DataPacket::deserialize(const char *src) {
 
     printf("-> Data packet: { block_number: %d, data_size: %ld }\n",
            block_number, data_size);
+
+    return size;
 }
 
 ssize_t AckPacket::serialize(char *dst) const {
@@ -134,7 +176,7 @@ ssize_t AckPacket::serialize(char *dst) const {
     return size;
 }
 
-void AckPacket::deserialize(const char *src) {
+ssize_t AckPacket::deserialize(const char *src) {
     // Read packet with size
     ssize_t size = 0;
 
@@ -148,6 +190,8 @@ void AckPacket::deserialize(const char *src) {
     size += sizeof(block_number);
 
     printf("-> Ack packet: { block_number: %d }\n", block_number);
+
+    return size;
 }
 
 ssize_t ErrorPacket::serialize(char *dst) const {
@@ -171,7 +215,7 @@ ssize_t ErrorPacket::serialize(char *dst) const {
     return size;
 }
 
-void ErrorPacket::deserialize(const char *src) {
+ssize_t ErrorPacket::deserialize(const char *src) {
     // Read packet with size
     ssize_t size = 0;
 
@@ -190,5 +234,58 @@ void ErrorPacket::deserialize(const char *src) {
     size += strlen(message) + 1;
 
     printf("-> Error packet: { code: %d, message: %s }\n", (int)code, message);
+
+    return size;
+}
+
+ssize_t OptionAckPacket::serialize(char *dst) const {
+    // Create packet with size
+    ssize_t size = 0;
+
+    // Write opcode
+    *reinterpret_cast<uint16_t *>(dst) = htons(static_cast<uint16_t>(type));
+    size += sizeof(type);
+
+    // Write options
+    for (auto &option : options) {
+        // Write option name
+        strcpy(dst + size, option.first.c_str());
+        size += strlen(option.first.c_str()) + 1;
+
+        // Write option value
+        strcpy(dst + size, option.second.c_str());
+        size += strlen(option.second.c_str()) + 1;
+    }
+
+    printf("<- Option ack packet: { options: %ld }\n", options.size());
+    return size;
+}
+
+ssize_t OptionAckPacket::deserialize(const char *src) {
+    // Read packet with size
+    ssize_t size = 0;
+
+    // Read opcode
+    type = static_cast<PacketType>(
+        ntohs(*reinterpret_cast<const uint16_t *>(src)));
+    size += sizeof(type);
+
+    // Read options
+    while (size < 512) {
+        // Read option name
+        std::string option_name(src + size);
+        size += strlen(src + size) + 1;
+
+        // Read option value
+        std::string option_value(src + size);
+        size += strlen(src + size) + 1;
+
+        // Add option
+        options[option_name] = option_value;
+    }
+
+    printf("-> Option ack packet: { options: %ld }\n", options.size());
+
+    return size;
 }
 }  // namespace tftp

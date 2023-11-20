@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <map>
 
 namespace tftp {
 enum class PacketType : uint16_t {
@@ -15,6 +16,7 @@ enum class PacketType : uint16_t {
     DATA = 3,
     ACK = 4,
     ERROR = 5,
+    OACK = 6,
 };
 
 class Packet {
@@ -26,7 +28,7 @@ class Packet {
     virtual ~Packet() = default;
 
     virtual ssize_t serialize(char *dst) const = 0;
-    virtual void deserialize(const char *src) = 0;
+    virtual ssize_t deserialize(const char *src) = 0;
 };
 
 enum ReadWriteRequestMode : uint8_t {
@@ -44,9 +46,11 @@ class ReadWriteRequestPacket : public Packet {
    public:
     char filename[512];
     ReadWriteRequestMode mode;
+    std::map<std::string, std::string> options;
 
     ssize_t serialize(char *dst) const override;
-    void deserialize(const char *src) override;
+    ssize_t deserialize(const char *src) override;
+    void deserializeOptions(const char *src, ssize_t size);
 };
 
 class ReadRequestPacket : public ReadWriteRequestPacket {
@@ -73,7 +77,7 @@ class DataPacket : public Packet {
    public:
     uint16_t block_number;
     ssize_t data_size;
-    char data[512];
+    char data[UINT16_MAX - 4];
 
     DataPacket() : Packet(PacketType::DATA) {}
     DataPacket(uint16_t block_number, const char *data, ssize_t data_size)
@@ -85,7 +89,7 @@ class DataPacket : public Packet {
     ~DataPacket() = default;
 
     ssize_t serialize(char *dst) const override;
-    void deserialize(const char *src) override;
+    ssize_t deserialize(const char *src) override;
 };
 
 class AckPacket : public Packet {
@@ -98,7 +102,7 @@ class AckPacket : public Packet {
     ~AckPacket() = default;
 
     ssize_t serialize(char *dst) const override;
-    void deserialize(const char *src) override;
+    ssize_t deserialize(const char *src) override;
 };
 
 enum class ErrorCode : uint16_t {
@@ -125,6 +129,18 @@ class ErrorPacket : public Packet {
     ~ErrorPacket() = default;
 
     ssize_t serialize(char *dst) const override;
-    void deserialize(const char *src) override;
+    ssize_t deserialize(const char *src) override;
+};
+
+class OptionAckPacket : public Packet {
+   public:
+    std::map<std::string, std::string> options;
+    OptionAckPacket() : Packet(PacketType::OACK) {}
+    OptionAckPacket(std::map<std::string, std::string> options)
+        : Packet(PacketType::OACK), options(options) {}
+    ~OptionAckPacket() = default;
+
+    ssize_t serialize(char *dst) const override;
+    ssize_t deserialize(const char *src) override;
 };
 }  // namespace tftp

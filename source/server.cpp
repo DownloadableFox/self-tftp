@@ -6,9 +6,8 @@
 #include "common.hpp"
 
 namespace tftp {
-Server::Server(std::string ip, unsigned int port,
-               AbstractController &controller)
-    : controller(controller) {
+Server::Server(std::string ip, unsigned int port, PacketHandler &packet_handler)
+    : packet_handler(packet_handler) {
 #ifdef _WIN32
     WSADATA wsa_data;
     if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
@@ -61,6 +60,15 @@ void Server::listen() {
             recvfrom(this->socket_fd, this->request, BUFFER_SIZE, 0,
                      (struct sockaddr *)&this->client_addr, &client_len);
 
+        if (request_size > BUFFER_SIZE) {
+            std::cout << "Ignoring request from "
+                      << inet_ntoa(this->client_addr.sin_addr) << ":"
+                      << ntohs(this->client_addr.sin_port)
+                      << " because it is too large" << std::endl;
+
+            continue;
+        }
+
         if (request_size < 0) {
             throw std::runtime_error("Failed to receive data");
         }
@@ -70,7 +78,7 @@ void Server::listen() {
                   << ntohs(this->client_addr.sin_port) << std::endl;
 
         // Handle the request
-        ssize_t response_size = this->controller.handlePacket(
+        ssize_t response_size = this->packet_handler.handlePacket(
             this->request, this->response, request_size);
 
         // Skip packets that don't require a response

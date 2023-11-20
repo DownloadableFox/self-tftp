@@ -17,7 +17,7 @@ constexpr inline unsigned int BUFFER_SIZE = 2048;
 
 class Server {
    public:
-    Server(std::string ip, unsigned int port, AbstractController& controller);
+    Server(std::string ip, unsigned int port, PacketHandler& controller);
     ~Server();
 
     void listen();
@@ -27,6 +27,6 @@ class Server {
     struct sockaddr_in server_addr, client_addr;
     char request[BUFFER_SIZE], response[BUFFER_SIZE];
 
-    AbstractController& controller;
+    PacketHandler& packet_handler;
 };
 }  // namespace tftp
